@@ -1,24 +1,95 @@
 # tuneflow-devkit-py
+
 Python DevKit for TuneFlow
 
-## Architecture
+## Installation
 
-![Architecture](./public/images/sdk_illustration.jpg)
+```bash
+pip install tuneflow-devkit-py
+```
 
-## Roadmap
+> **Note:** You may need to make sure the version of `tuneflow-py` is compatible with the `tuneflow-devkit-py` you are using. To do that, check the `requirements.txt` in `tuneflow-devkit-py` and see if its `tuneflow-py` is set to the same version as your `tuneflow-py`.
 
-1. Implement basic python socket.io server that receives and prints messages from plugin-dev-plugin.
-2. Define a `Plugin` class that follows the same interface as [base_plugin.ts](https://github.com/andantei/tuneflow/blob/master/src/base_plugin.ts).
-3. Define a hello world plugin that defines the basic plugin info (providerId, providerDisplayName, etc...)
-4. Handles `set-song` message and returns the plugin info, PluginDevPlugin should be able to show the debugging plugin's info.
-5. Add `init` and `run` interface into `Plugin` class.
-6. Write a plugin that splits a track into two voices, similar to [tuneflow-helloworld-plugin](https://github.com/andantei/tuneflow-helloworld-plugin/blob/main/index.ts)
-7. Handles `init-plugin` and `run-plugin` in the devkit, and call the plugin's `init` and `run` methods and returns the corresponding results, in PluginDevPlugin we should be able to run the debugging plugin and split the selected track into two voices.
+## Run a Python TuneFlow Plugin With `tuneflow-devkit-py`
 
-## References
+To run a plugin locally, we need to create a debug server that hosts the plugin and talks to TuneFlow. Let's call it `debug.py`, which is as simple as 3 lines of code (see [debug.py](https://github.com/tuneflow/tuneflow-py-demos/blob/main/src/debug.py) for an example):
 
-* [tuneflow](https://github.com/andantei/tuneflow)
-* [tuneflow-devkit](https://github.com/andantei/tuneflow-devkit)
-* [tuneflow-helloworld-plugin](https://github.com/andantei/tuneflow-helloworld-plugin)
-* [tuneflow-proto](https://github.com/andantei/tuneflow-proto)
-* [插件系统是如何运作的？](https://help.tuneflow.com/zh/developer/how-we-run-plugins.html)
+```python
+# debug.py
+
+from your_plugin_path import YourPlugin
+from tuneflow_devkit import Debugger
+
+if __name__ == "__main__":
+    Debugger(plugin_class=YourPlugin).start()
+```
+
+To use it, simply run:
+
+```bash
+python debug.py
+```
+
+The plugin will then be loaded into a local debug server that talks to TuneFlow Desktop.
+
+Next, start **TuneFlow Desktop** and run the `Plugin Development` plugin.
+
+You will see the plugin loaded into TuneFlow Desktop in debug mode.
+
+![How to run the plugin in TuneFlow Desktop](./public/images/run_plugin_exp.png)
+
+Run the loaded plugin in TuneFlow Desktop, you will be able to see your python plugin executed.
+
+## Examples
+
+The easiest way to learn how to write plugins is through examples. To view all example projects, check out https://github.com/tuneflow/tuneflow-py-demos.
+
+## Debug Your Plugin
+
+When developing our plugin, we need to set breakpoints and watch variables as we execute the plugin. The setup varies with different IDEs, we'll use VSCode as an example below.
+
+First create a debug config in `.vscode/launch.json` under your working directory, and fill it with something like below:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "<your python path here>"
+      }
+    }
+  ]
+}
+```
+
+Next, in our plugin-related files, we need to set the breakpoints by clicking the space next to the line number:
+
+![Set breakpoints](./public/images/set_breakpoints.jpg)
+
+Finally, open the debug entry file `debug.py`. In VSCode debug panel, set debug target to `Python: Current File` and click the start button.
+
+![Start debugging](./public/images/start_debug.jpg)
+
+Now, when you run the plugin, you will be able to stop at breakpoints and view your variables.
+
+![View debug information](./public/images/stop_at_breakpoint.jpg)
+
+> **Note:** For more information on how to debug python code in VSCode, see https://code.visualstudio.com/docs/python/debugging
+
+## Contributing
+
+Read [Contributing](./CONTRIBUTING.md)
+
+## Resources
+
+- [TuneFlow Typescript Plugin](https://github.com/andantei/tuneflow)
+- [TuneFlow Typescript Dev Kit](https://github.com/andantei/tuneflow-devkit)
+- [TuneFlow Basic Plugins in Typescript](https://github.com/andantei/tuneflow-plugin-basic)
+- [插件系统是如何运作的？](https://help.tuneflow.com/zh/developer/how-we-run-plugins.html)

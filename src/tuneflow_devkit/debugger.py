@@ -2,8 +2,8 @@ import socketio
 import uvicorn
 from tuneflow_py import TuneflowPlugin, Song, LabelText, ReadAPIs
 from typing import Type
-from locale import getlocale
 import traceback
+from tuneflow_devkit.read_api_utils import serialize_song, deserialize_song, translate_label
 
 
 class Debugger:
@@ -24,11 +24,19 @@ class Debugger:
 
         def handle_connect(sid, environ, auth):
             self._daw_sid = sid
-            print("new daw connection")
+            print(
+                "===========================================================================")
+            print("TuneFlow connected")
+            print(
+                "===========================================================================")
 
         def handle_disconnect(sid):
             self._daw_sid = None
-            print("daw disconnected")
+            print(
+                "===========================================================================")
+            print("TuneFlow disconnected")
+            print(
+                "===========================================================================")
 
         async def handle_set_song(sid, data):
             self._serialized_song = data["serializedSong"]
@@ -50,9 +58,11 @@ class Debugger:
                 self._plugin = self._plugin_class.create(
                     song, self.create_read_apis())
             except Exception as e:
-                print("================ Run Plugin Exception ================")
+                print(
+                    "=========================== Run Plugin Exception ==========================")
                 traceback.print_exc()
-                print("======================================================")
+                print(
+                    "===========================================================================")
                 return {
                     "status": "INIT_PLUGIN_EXCEPTION"
                 }
@@ -90,35 +100,17 @@ class Debugger:
 
         # Wrap with ASGI application
         self._app = socketio.ASGIApp(self._sio)
+        self.print_plugin_info(plugin_class=self._plugin_class)
+        print()
+        print("======================================================")
+        print(translate_label({
+            "en": "Run \"Plugin Development\" Plugin from TuneFlow plugin inventory to run this plugin.",
+            "zh": "运行TuneFlow插件仓库中的\"插件开发\"插件即可开始调试本插件"
+        }))
+        print("======================================================")
         uvicorn.run(self._app, host='127.0.0.1', port=self.port)
 
-    @staticmethod
-    def get_system_locale():
-        return getlocale()
-
     def create_read_apis(self) -> ReadAPIs:
-        def translate_label(label_text: LabelText):
-            if type(label_text) is str:
-                return label_text
-
-            current_locale = Debugger.get_system_locale()[0]
-            match_locales = [item.split(
-                '-')[0].lower() for item in label_text.keys() if item == current_locale]
-            match_locale = match_locales[0] if len(match_locales) > 0 else None
-
-            if match_locale is not None:
-                return label_text[match_locale]  # type: ignore
-            elif len(label_text.keys()) > 0:  # type: ignore
-                return label_text[label_text.keys()[0]]  # type: ignore
-            else:
-                return ''
-
-        def serialize_song(song: Song):
-            return song.serialize()
-
-        def deserialize_song(encoded_song: str):
-            return Song.deserialize(encoded_song)
-
         async def get_available_audio_plugins():
             response = None
 
@@ -133,3 +125,19 @@ class Debugger:
             "deserialize_song": deserialize_song,
             "get_available_audio_plugins": get_available_audio_plugins
         }
+
+    @staticmethod
+    def print_plugin_info(plugin_class: Type[TuneflowPlugin]):
+        print(translate_label(
+            {"en": "============= Plugin Info =============",
+             "zh": "=============== 插件信息 ==============="}))
+        print("Provider ID:", plugin_class.provider_id())
+        print("Provider Name:", translate_label(
+            plugin_class.provider_display_name()))
+        print("Plugin ID:", plugin_class.plugin_id())
+        print("Plugin Name:", translate_label(
+            plugin_class.plugin_display_name()))
+        plugin_description = plugin_class.plugin_description()
+        print("Plugin Description:", translate_label(plugin_description)
+              if plugin_description is not None else 'None')
+        print("=======================================")
