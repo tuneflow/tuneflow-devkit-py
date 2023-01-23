@@ -1,5 +1,5 @@
 import socketio
-import uvicorn
+import eventlet
 from tuneflow_py import TuneflowPlugin, Song, LabelText, ReadAPIs
 from typing import Type
 import traceback
@@ -14,12 +14,12 @@ class Debugger:
         self._plugin: TuneflowPlugin | None = None
         self._plugin_class = plugin_class
         self._daw_sid: None | str = None
-        self._sio: None | socketio.AsyncServer = None
+        self._sio: None | socketio.Server = None
         self.port = 18818
 
     def start(self):
         # create a Socket.IO server
-        sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+        sio = socketio.Server(async_mode='eventlet', cors_allowed_origins='*')
         self._sio = sio
 
         def handle_connect(sid, environ, auth):
@@ -38,7 +38,7 @@ class Debugger:
             print(
                 "===========================================================================")
 
-        async def handle_set_song(sid, data):
+        def handle_set_song(sid, data):
             self._serialized_song = data["serializedSong"]
             self._plugin = None
             return {
@@ -50,7 +50,7 @@ class Debugger:
                 }
             }
 
-        async def handle_init_plugin(sid, data):
+        def handle_init_plugin(sid, data):
             if self._serialized_song is None:
                 return {"status": "SONG_OR_PLUGIN_NOT_READY"}
             song = Song.deserialize(self._serialized_song)
@@ -71,7 +71,7 @@ class Debugger:
                     "params": self._plugin.params_result_internal
                     }
 
-        async def handle_run_plugin(sid, data):
+        def handle_run_plugin(sid, data):
             if self._plugin is None or self._serialized_song is None:
                 return {"status": "SONG_OR_PLUGIN_NOT_READY"}
             params = data["params"]
@@ -99,7 +99,7 @@ class Debugger:
         self._sio = sio
 
         # Wrap with ASGI application
-        self._app = socketio.ASGIApp(self._sio)
+        self._app = socketio.WSGIApp(self._sio)
         self.print_plugin_info(plugin_class=self._plugin_class)
         print()
         print("======================================================")
@@ -108,23 +108,28 @@ class Debugger:
             "zh": "运行TuneFlow插件仓库中的\"插件开发\"插件即可开始调试本插件"
         }))
         print("======================================================")
-        uvicorn.run(self._app, host='127.0.0.1', port=self.port)
+        eventlet.wsgi.server(eventlet.listen(
+            ('127.0.0.1', self.port)), self._app)
 
     def create_read_apis(self) -> ReadAPIs:
-        async def get_available_audio_plugins():
-            response = None
+        def get_available_audio_plugins():
+            if self._sio is None:
+                raise Exception('Debugger not connected yet.')
+            return self._sio.call(event='call-api', namespace="/daw", data=["getAvailableAudioPlugins"], to=self._daw_sid)
 
-            def handle_get_audio_plugins_callback(sid, data):
-                response = data
-            await self._sio.emit(event='getAvailableAudioPlugins', data=None, to=self._daw_sid, callback=handle_get_audio_plugins_callback)
-            return response
+        class ReadAPIsImpl(ReadAPIs):
+            def translate_label(self, label_text: LabelText):
+                return translate_label(label_text=label_text)
 
-        return {
-            "translate_label": translate_label,
-            "serialize_song": serialize_song,
-            "deserialize_song": deserialize_song,
-            "get_available_audio_plugins": get_available_audio_plugins
-        }
+            def serialize_song(self, song: Song):
+                return serialize_song(song=song)
+
+            def deserialize_song(self, encoded_song: str):
+                return deserialize_song(encoded_song=encoded_song)
+
+            def get_available_audio_plugins(self):
+                return get_available_audio_plugins()
+        return ReadAPIsImpl()
 
     @staticmethod
     def print_plugin_info(plugin_class: Type[TuneflowPlugin]):
