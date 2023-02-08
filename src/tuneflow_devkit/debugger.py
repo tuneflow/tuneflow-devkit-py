@@ -35,10 +35,16 @@ class Debugger:
             print(
                 "===========================================================================")
             print("TuneFlow disconnected")
+            print()
+            print(translate_label({
+                "en": "IMPORTANT: Please undo the \"Pluign Development\" plugin and re-run it after you restart the DevKit.",
+                "zh": "注意: 请在TuneFlow中退出\"插件开发\"插件，并在DevKit重新启动后重新运行该插件"
+            }))
             print(
                 "===========================================================================")
 
         def handle_set_song(sid, data):
+            print('receiving a new song')
             self._serialized_song = data["serializedSong"]
             self._plugin = None
             return {
@@ -51,6 +57,7 @@ class Debugger:
             }
 
         def handle_init_plugin(sid, data):
+            print('init plugin')
             if self._serialized_song is None:
                 return {"status": "SONG_OR_PLUGIN_NOT_READY"}
             song = Song.deserialize(self._serialized_song)
@@ -72,6 +79,7 @@ class Debugger:
                     }
 
         def handle_run_plugin(sid, data):
+            print('run plugin')
             if self._plugin is None or self._serialized_song is None:
                 return {"status": "SONG_OR_PLUGIN_NOT_READY"}
             params = data["params"]
@@ -104,8 +112,8 @@ class Debugger:
         print()
         print("======================================================")
         print(translate_label({
-            "en": "Run \"Plugin Development\" Plugin from TuneFlow plugin inventory to run this plugin.",
-            "zh": "运行TuneFlow插件仓库中的\"插件开发\"插件即可开始调试本插件"
+            "en": "IMPORTANT: Run \"Plugin Development\" Plugin from TuneFlow plugin inventory to run this plugin.",
+            "zh": "注意: 运行TuneFlow插件仓库中的\"插件开发\"插件即可开始调试本插件"
         }))
         print("======================================================")
         eventlet.wsgi.server(eventlet.listen(

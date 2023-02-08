@@ -83,6 +83,10 @@ Now, when you run the plugin, you will be able to stop at breakpoints and view y
 
 > **Note:** For more information on how to debug python code in VSCode, see https://code.visualstudio.com/docs/python/debugging
 
+## Making code changes when debugging your plugin
+
+When you change your plugin code, you will need to exit the devkit and restart it. Please note that **you need to exit the "Plugin Development" plugin in TuneFlow when you exit the devkit**, so that the next time you start the devkit, "Plugin Development" plugin can be initialized correctly.
+
 ## Contributing
 
 Read [Contributing](./CONTRIBUTING.md)
