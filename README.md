@@ -2,6 +2,10 @@
 
 Python DevKit for TuneFlow
 
+## Requirements
+
+Python >= 3.7
+
 ## Installation
 
 ```bash
