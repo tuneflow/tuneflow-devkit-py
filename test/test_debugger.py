@@ -34,12 +34,12 @@ class TestPluginAnd(unittest.TestCase):
         }
 
         with pytest.raises(Exception) as e_info_1:
-            Debugger.validate_plugin_and_bundle(plugin_class=InvalidPlugin1, bundle_info=bundle_info)
+            Debugger.validate_plugin(plugin_class=InvalidPlugin1)
 
         self.assertIn("provider_id must only use", e_info_1.value.args[0])
 
         with pytest.raises(Exception) as e_info_2:
-            Debugger.validate_plugin_and_bundle(plugin_class=InvalidPlugin2, bundle_info=bundle_info)
+            Debugger.validate_plugin(plugin_class=InvalidPlugin2)
 
         self.assertIn("provider_id must only use", e_info_2.value.args[0])
 
@@ -72,25 +72,16 @@ class TestPluginAnd(unittest.TestCase):
         }
 
         with pytest.raises(Exception) as e_info:
-            Debugger.validate_plugin_and_bundle(plugin_class=InvalidPlugin1, bundle_info=bundle_info)
+            Debugger.validate_plugin(plugin_class=InvalidPlugin1)
 
         self.assertIn("plugin_id must only use", e_info.value.args[0])
 
         with pytest.raises(Exception) as e_info:
-            Debugger.validate_plugin_and_bundle(plugin_class=InvalidPlugin2, bundle_info=bundle_info)
+            Debugger.validate_plugin(plugin_class=InvalidPlugin2)
 
         self.assertIn("plugin_id must only use", e_info.value.args[0])
 
     def test_missing_in_bundle(self):
-        class InvalidPlugin1(TuneflowPlugin):
-            @staticmethod
-            def provider_id() -> str:
-                return 'abc'
-
-            @staticmethod
-            def plugin_id() -> str:
-                return 'abc'
-
         bundle_info = {
             "plugins": [
                 {
@@ -99,8 +90,5 @@ class TestPluginAnd(unittest.TestCase):
                 }
             ]
         }
-
-        with pytest.raises(Exception) as e_info:
-            Debugger.validate_plugin_and_bundle(plugin_class=InvalidPlugin1, bundle_info=bundle_info)
-
-        self.assertIn("plugin not specified", e_info.value.args[0])
+        plugin_info = Debugger.find_match_plugin_info(bundle_info=bundle_info, provider_id='c_de', plugin_id='cde')
+        self.assertIsNone(plugin_info)
