@@ -29,11 +29,4 @@ def translate_label(label_text: LabelText):
         return label_text[label_keys[0]]  # type: ignore
     else:
         return ''
-
-
-def serialize_song(song: Song):
-    return song.serialize()
-
-
-def deserialize_song(encoded_song: str):
-    return Song.deserialize(encoded_song)
+    

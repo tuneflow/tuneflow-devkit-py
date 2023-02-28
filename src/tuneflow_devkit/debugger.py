@@ -1,10 +1,10 @@
 from __future__ import annotations
 import socketio
 import uvicorn
-from tuneflow_py import TuneflowPlugin, Song, LabelText, ReadAPIs
+from tuneflow_py import TuneflowPlugin, Song
 from typing import Type
 import traceback
-from tuneflow_devkit.read_api_utils import serialize_song, deserialize_song, translate_label
+from tuneflow_devkit.translate_utils import translate_label
 import asyncio
 import functools
 import json
@@ -74,7 +74,7 @@ class Debugger:
 
         def init_plugin_task(plugin_class: Type[TuneflowPlugin], song: Song, sio, sid):
             try:
-                params_config = plugin_class.params(song,  Debugger.create_read_apis(sio, sid))
+                params_config = plugin_class.params(song)
                 return {"status": "OK",
                         "paramsConfig": params_config,
                         "params": plugin_class._get_default_params(param_config=params_config)
@@ -98,7 +98,7 @@ class Debugger:
 
         def run_plugin_task(plugin_class: Type[TuneflowPlugin], song, params, sio, sid):
             try:
-                plugin_class.run(song, params, Debugger.create_read_apis(sio, sid))
+                plugin_class.run(song, params)
             except Exception as e:
                 print("================ Run Plugin Exception ================")
                 traceback.print_exc()
@@ -138,27 +138,6 @@ class Debugger:
         }))
         print("======================================================")
         uvicorn.run(self._app, host='127.0.0.1', port=self.port)
-
-    @staticmethod
-    def create_read_apis(sio, sid) -> ReadAPIs:
-        def get_available_audio_plugins():
-            if sio is None:
-                raise Exception('Debugger not connected yet.')
-            return sio.call(event='call-api', namespace="/daw", data=["getAvailableAudioPlugins"], to=sid)
-
-        class ReadAPIsImpl(ReadAPIs):
-            def translate_label(self, label_text: LabelText):
-                return translate_label(label_text=label_text)
-
-            def serialize_song(self, song: Song):
-                return serialize_song(song=song)
-
-            def deserialize_song(self, encoded_song: str):
-                return deserialize_song(encoded_song=encoded_song)
-
-            def get_available_audio_plugins(self):
-                return get_available_audio_plugins()
-        return ReadAPIsImpl()
 
     @staticmethod
     def print_plugin_info(plugin_info):
