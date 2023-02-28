@@ -35,7 +35,7 @@ classifiers = [
 dependencies = [
     'python-socketio >= 5.7.2',
     'uvicorn[standard] >= 0.20.0',
-    'tuneflow-py >= 0.2.0',
+    'tuneflow-py >= 0.3.0',
 ]
 
 [project.urls]
