@@ -9,7 +9,7 @@ import asyncio
 import functools
 import json
 import re
-
+from msgpack import unpackb
 
 class Debugger:
     def __init__(self, plugin_class: Type[TuneflowPlugin], bundle_file_path: str) -> None:
@@ -36,7 +36,8 @@ class Debugger:
 
     def start(self):
         # create a Socket.IO server
-        sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+        # Maximum http buffer size set to 100MB.
+        sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*', max_http_buffer_size=1e8)
         self._sio = sio
 
         async def handle_connect(sid, environ, auth):
@@ -115,7 +116,8 @@ class Debugger:
             print('run plugin')
             if self._serialized_song is None:
                 return {"status": "SONG_OR_PLUGIN_NOT_READY"}
-            params = data["params"]
+            decoded_data = unpackb(data)
+            params = decoded_data["params"]
             song = Song.deserialize(self._serialized_song)
             return await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=self._plugin_class, song=song, params=params, sio=self._sio, sid=self._daw_sid))
 

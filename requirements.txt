@@ -1,3 +1,4 @@
 python-socketio>=5.7.2
 uvicorn>=0.20.0
 tuneflow-py>=0.3.0
+msgpack==1.0.4
