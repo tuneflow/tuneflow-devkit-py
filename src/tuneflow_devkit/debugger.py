@@ -9,7 +9,8 @@ import asyncio
 import functools
 import json
 import re
-from msgpack import unpackb
+from msgpack import unpackb, packb
+
 
 class Debugger:
     def __init__(self, plugin_class: Type[TuneflowPlugin], bundle_file_path: str) -> None:
@@ -27,8 +28,6 @@ class Debugger:
                 raise Exception(
                     "plugin not specified in the bundle, check your bundle.json. For more information checkout https://github.com/tuneflow/tuneflow-py")
             self._plugin_info = plugin_info
-
-        self._serialized_song: str | None = None
 
         self._daw_sid: None | str = None
         self._sio: None | socketio.AsyncServer = None
@@ -61,9 +60,7 @@ class Debugger:
             print(
                 "===========================================================================")
 
-        async def handle_set_song(sid, data):
-            print('receiving a new song')
-            self._serialized_song = data["serializedSong"]
+        async def handle_get_bundle_info(sid, data):
             return {
                 "status": "OK",
                 "pluginInfo": {
@@ -91,11 +88,10 @@ class Debugger:
                 }
 
         async def handle_init_plugin(sid, data):
-            if self._serialized_song is None:
-                return {"status": "SONG_OR_PLUGIN_NOT_READY"}
-            song = Song.deserialize(self._serialized_song)
+            decoded_data = unpackb(data)
+            song = Song.deserialize_from_bytestring(decoded_data["song"])
             response = await asyncio.get_event_loop().run_in_executor(None, functools.partial(init_plugin_task, plugin_class=self._plugin_class, song=song, sio=self._sio, sid=self._daw_sid))
-            return response
+            return packb(response)
 
         def run_plugin_task(plugin_class: Type[TuneflowPlugin], song, params, sio, sid):
             try:
@@ -109,21 +105,20 @@ class Debugger:
                 }
             return {
                 "status": "OK",
-                "serializedSongResult": song.serialize()
+                "song": song.serialize_to_bytestring()
             }
 
         async def handle_run_plugin(sid, data):
             print('run plugin')
-            if self._serialized_song is None:
-                return {"status": "SONG_OR_PLUGIN_NOT_READY"}
             decoded_data = unpackb(data)
             params = decoded_data["params"]
-            song = Song.deserialize(self._serialized_song)
-            return await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=self._plugin_class, song=song, params=params, sio=self._sio, sid=self._daw_sid))
+            song = Song.deserialize_from_bytestring(decoded_data["song"])
+            result = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=self._plugin_class, song=song, params=params, sio=self._sio, sid=self._daw_sid))
+            return packb(result)
 
         sio.on("connect", handle_connect, namespace='/daw')
         sio.on("disconnect", handle_disconnect, namespace='/daw')
-        sio.on('set-song', handle_set_song, namespace='/daw')
+        sio.on('get-bundle-info', handle_get_bundle_info, namespace='/daw')
         sio.on('init-plugin', handle_init_plugin, namespace='/daw')
         sio.on('run-plugin', handle_run_plugin, namespace='/daw')
 
