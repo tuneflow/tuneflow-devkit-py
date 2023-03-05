@@ -1,5 +1,5 @@
 from tuneflow_py import TuneflowPlugin
-from tuneflow_devkit import Debugger
+from tuneflow_devkit.validation_utils import find_match_plugin_info, validate_plugin
 import unittest
 import pytest
 
@@ -34,12 +34,12 @@ class TestPluginAnd(unittest.TestCase):
         }
 
         with pytest.raises(Exception) as e_info_1:
-            Debugger.validate_plugin(plugin_class=InvalidPlugin1)
+            validate_plugin(plugin_class=InvalidPlugin1)
 
         self.assertIn("provider_id must only use", e_info_1.value.args[0])
 
         with pytest.raises(Exception) as e_info_2:
-            Debugger.validate_plugin(plugin_class=InvalidPlugin2)
+            validate_plugin(plugin_class=InvalidPlugin2)
 
         self.assertIn("provider_id must only use", e_info_2.value.args[0])
 
@@ -72,12 +72,12 @@ class TestPluginAnd(unittest.TestCase):
         }
 
         with pytest.raises(Exception) as e_info:
-            Debugger.validate_plugin(plugin_class=InvalidPlugin1)
+            validate_plugin(plugin_class=InvalidPlugin1)
 
         self.assertIn("plugin_id must only use", e_info.value.args[0])
 
         with pytest.raises(Exception) as e_info:
-            Debugger.validate_plugin(plugin_class=InvalidPlugin2)
+            validate_plugin(plugin_class=InvalidPlugin2)
 
         self.assertIn("plugin_id must only use", e_info.value.args[0])
 
@@ -90,5 +90,5 @@ class TestPluginAnd(unittest.TestCase):
                 }
             ]
         }
-        plugin_info = Debugger.find_match_plugin_info(bundle_info=bundle_info, provider_id='c_de', plugin_id='cde')
+        plugin_info = find_match_plugin_info(bundle_info=bundle_info, provider_id='c_de', plugin_id='cde')
         self.assertIsNone(plugin_info)
