@@ -8,20 +8,24 @@ from tuneflow_devkit.translate_utils import translate_label
 import asyncio
 import functools
 import json
-import re
+from tuneflow_devkit.validation_utils import validate_plugin, find_match_plugin_info
 from msgpack import unpackb, packb
 
 
 class Debugger:
     def __init__(self, plugin_class: Type[TuneflowPlugin], bundle_file_path: str) -> None:
+        '''
+        Creates a local debug server for a single plugin.
+        '''
+
         if plugin_class is None or bundle_file_path is None:
             raise Exception("plugin_class and bundle_file must be provided")
-        Debugger.validate_plugin(plugin_class=plugin_class)
+        validate_plugin(plugin_class=plugin_class)
         self._plugin_class = plugin_class
         with open(bundle_file_path, 'r') as bundle_file:
             bundle_info = json.load(bundle_file)
             # Validate plugin and bundle.
-            plugin_info = Debugger.find_match_plugin_info(
+            plugin_info = find_match_plugin_info(
                 bundle_info=bundle_info, provider_id=plugin_class.provider_id(),
                 plugin_id=plugin_class.plugin_id())
             if plugin_info is None:
@@ -152,30 +156,4 @@ class Debugger:
               if plugin_description is not None else 'None')
         print("=======================================")
 
-    @staticmethod
-    def find_match_plugin_info(bundle_info, provider_id: str, plugin_id: str):
-        for plugin_info in bundle_info["plugins"]:
-            if plugin_info["providerId"] == provider_id and plugin_info["pluginId"] == plugin_id:
-                return plugin_info
-        return None
-
-    @staticmethod
-    def validate_plugin(plugin_class: Type[TuneflowPlugin]):
-        MAX_ID_LENGTH = 100
-        if plugin_class.plugin_id() is None:
-            raise Exception("plugin_id must be provided")
-
-        if len(plugin_class.plugin_id()) > MAX_ID_LENGTH:
-            raise Exception(f"plugin_id must not be longer than {MAX_ID_LENGTH}")
-
-        if re.compile(r'[a-zA-Z]+[0-9a-zA-Z-]*').fullmatch(plugin_class.plugin_id()) is None:
-            raise Exception('plugin_id must only use [0-9a-zA-Z-] and the first letter cannot be a digit`')
-
-        if plugin_class.provider_id() is None:
-            raise Exception("provider_id must be provided")
-
-        if len(plugin_class.provider_id()) > MAX_ID_LENGTH:
-            raise Exception(f"provider_id must not be longer than {MAX_ID_LENGTH}")
-
-        if re.compile(r'[a-zA-Z]+[0-9a-zA-Z-]*').fullmatch(plugin_class.provider_id()) is None:
-            raise Exception('provider_id must only use [0-9a-zA-Z-] and the first letter cannot be a digit`')
+    
