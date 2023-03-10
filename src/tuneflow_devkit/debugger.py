@@ -67,11 +67,7 @@ class Debugger:
         async def handle_get_bundle_info(sid, data):
             return {
                 "status": "OK",
-                "pluginInfo": {
-                    "pluginDisplayName": self._plugin_info["pluginDisplayName"],
-                    "pluginDescription": self._plugin_info["pluginDescription"],
-                    "providerDisplayName": self._plugin_info["providerDisplayName"]
-                }
+                "pluginInfo": self._plugin_info
             }
 
         def init_plugin_task(plugin_class: Type[TuneflowPlugin], song: Song, sio, sid):
@@ -155,5 +151,3 @@ class Debugger:
         print("Plugin Description:", translate_label(plugin_description)
               if plugin_description is not None else 'None')
         print("=======================================")
-
-    
