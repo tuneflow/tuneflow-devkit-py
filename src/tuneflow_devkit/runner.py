@@ -69,9 +69,9 @@ class Runner:
             response.headers["Vary"] = 'Origin'
             return response
 
-        get_info_path = str(PosixPath(path_prefix).joinpath('bundle-info'))
-        init_plugin_path = str(PosixPath(path_prefix).joinpath('init'))
-        run_plugin_path = str(PosixPath(path_prefix).joinpath('run'))
+        get_info_path = str(PosixPath(path_prefix).joinpath('plugin-bundle-info'))
+        init_plugin_path = str(PosixPath(path_prefix).joinpath('init-plugin-params'))
+        run_plugin_path = str(PosixPath(path_prefix).joinpath('jobs'))
 
         def init_plugin_task(plugin_class: Type[TuneflowPlugin], song: Song):
             try:

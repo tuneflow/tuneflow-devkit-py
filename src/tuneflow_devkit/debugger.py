@@ -58,8 +58,8 @@ class Debugger:
             print("TuneFlow disconnected")
             print()
             print(translate_label({
-                "en": "IMPORTANT: Please undo the \"Pluign Development\" plugin and re-run it after you restart the DevKit.",
-                "zh": "注意: 请在TuneFlow中退出\"插件开发\"插件，并在DevKit重新启动后重新运行该插件"
+                "en": "IMPORTANT: Please undo the plugin under debugging and re-run it after you restart the DevKit.",
+                "zh": "注意: 请在TuneFlow中撤销正在调试的插件，并在DevKit重新启动后重新运行该插件"
             }))
             print(
                 "===========================================================================")
@@ -130,8 +130,8 @@ class Debugger:
         print()
         print("======================================================")
         print(translate_label({
-            "en": "IMPORTANT: Run \"Plugin Development\" Plugin from TuneFlow plugin inventory to run this plugin.",
-            "zh": "注意: 运行TuneFlow插件仓库中的\"插件开发\"插件即可开始调试本插件"
+            "en": "IMPORTANT: Install this plugin in debug mode from the TuneFlow plugin library panel, then run this plugin from the right-click menu specified in the triggers",
+            "zh": "注意: 从 TuneFlow 库中以debug模式安装此插件，随后即可从各级右键菜单中运行此插件"
         }))
         print("======================================================")
         uvicorn.run(self._app, host='127.0.0.1', port=self.port)
