@@ -82,7 +82,7 @@ class Runner:
                         }
             except Exception as e:
                 return {
-                    "status": "INIT_PLUGIN_EXCEPTION"
+                    "status": "ERROR"
                 }
 
         def run_plugin_task(plugin_class: Type[TuneflowPlugin], song, params):
@@ -90,7 +90,7 @@ class Runner:
                 plugin_class.run(song, params)
             except Exception as e:
                 return {
-                    "status": "RUN_PLUGIN_EXCEPTION"
+                    "status": "ERROR"
                 }
             return {
                 "status": "OK",
