@@ -10,6 +10,7 @@ from pathlib import PosixPath
 import asyncio
 import functools
 from fastapi.middleware.cors import CORSMiddleware
+import traceback
 
 
 class Runner:
@@ -81,6 +82,7 @@ class Runner:
                         "params": plugin_class._get_default_params(param_config=params_config)
                         }
             except Exception as e:
+                print(traceback.format_exc())
                 return {
                     "status": "ERROR"
                 }
@@ -89,6 +91,7 @@ class Runner:
             try:
                 plugin_class.run(song, params)
             except Exception as e:
+                print(traceback.format_exc())
                 return {
                     "status": "ERROR"
                 }
