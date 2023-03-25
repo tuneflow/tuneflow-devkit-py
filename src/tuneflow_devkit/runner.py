@@ -5,7 +5,7 @@ import json
 from msgpack import unpackb, packb
 from tuneflow_devkit.validation_utils import validate_plugin, find_match_plugin_info
 from collections import defaultdict
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 from pathlib import PosixPath
 import asyncio
 import functools
@@ -106,11 +106,15 @@ class Runner:
                     return plugin_class
             raise Exception(f"Cannot find plugin by id {provider_id} {plugin_id}")
 
+        def no_auth_handler():
+            pass
+        auth_handler = config["auth"]["handler"] if config is not None and "auth" in config and "handler" in config["auth"] else None
+
         @app.get(get_info_path)
         def handle_get_bundle_info():
             return self._bundle_info
 
-        @app.post(init_plugin_path)
+        @app.post(init_plugin_path, dependencies=[Depends(auth_handler if auth_handler else no_auth_handler)])
         async def handle_init_plugin(request: Request):
             raw_body = await request.body()
             body = unpackb(raw_body)
@@ -121,7 +125,7 @@ class Runner:
             response = await asyncio.get_event_loop().run_in_executor(None, functools.partial(init_plugin_task, plugin_class=plugin_class, song=song))
             return Response(packb(response), headers={"Content-Type": "application/octet-stream"})
 
-        @app.post(run_plugin_path)
+        @app.post(run_plugin_path, dependencies=[Depends(auth_handler if auth_handler else no_auth_handler)])
         async def handle_run_plugin(request: Request):
             body = await request.body()
             decoded_data = unpackb(body)
