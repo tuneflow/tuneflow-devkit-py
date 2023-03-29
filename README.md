@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README.zh.md)
 
-Debugger for tuneflow-py.
+Debugger and Runner for tuneflow-py.
 
 [![Build Status](https://dev.azure.com/zeostudio/tuneflow-public/_apis/build/status/tuneflow.tuneflow-devkit-py?branchName=main)](https://dev.azure.com/zeostudio/tuneflow-public/_build/latest?definitionId=34&branchName=main)
 [![PyPI](https://img.shields.io/pypi/v/tuneflow-devkit-py?color=blue&label=tuneflow-devkit-py&logo=pypi)](https://pypi.org/project/tuneflow-devkit-py/)
