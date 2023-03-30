@@ -5,12 +5,13 @@ import json
 from msgpack import unpackb, packb
 from tuneflow_devkit.validation_utils import validate_plugin, find_match_plugin_info
 from collections import defaultdict
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, Request, Response, Depends, BackgroundTasks
 from pathlib import PosixPath
 import asyncio
 import functools
 from fastapi.middleware.cors import CORSMiddleware
 import traceback
+from nanoid import generate as generate_nanoid
 
 
 class Runner:
@@ -64,6 +65,8 @@ class Runner:
             allow_headers=["*"],
         )
 
+        async_config = config["async"] if config and "async" in config else None
+
         @app.middleware("http")
         async def add_vary_origin_header(request: Request, call_next):
             response = await call_next(request)
@@ -100,6 +103,12 @@ class Runner:
                 "song": song.serialize_to_bytestring()
             }
 
+        async def run_plugin_async_task(plugin_class: Type[TuneflowPlugin], song, params, job_id: str, store_uploader):
+            # TODO: Revisit to see if we can call run_plugin_task directly.
+            response = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
+            response["jobId"] = job_id
+            store_uploader(job_id, packb(response))
+
         def find_plugin_by_id(plugin_class_list: List[Type[TuneflowPlugin]], provider_id, plugin_id):
             for plugin_class in plugin_class_list:
                 if plugin_class.provider_id() == provider_id and plugin_class.plugin_id() == plugin_id:
@@ -126,7 +135,7 @@ class Runner:
             return Response(packb(response), headers={"Content-Type": "application/octet-stream"})
 
         @app.post(run_plugin_path, dependencies=[Depends(auth_handler if auth_handler else no_auth_handler)])
-        async def handle_run_plugin(request: Request):
+        async def handle_run_plugin(request: Request, background_tasks: BackgroundTasks):
             body = await request.body()
             decoded_data = unpackb(body)
             params = decoded_data["params"]
@@ -134,7 +143,19 @@ class Runner:
             plugin_id = decoded_data["pluginId"]
             plugin_class = find_plugin_by_id(self._plugin_class_list, provider_id=provider_id, plugin_id=plugin_id)
             song = Song.deserialize_from_bytestring(decoded_data["song"])
-            result = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
-            return Response(packb(result), headers={"Content-Type": "application/octet-stream"})
+            if async_config:
+                # Run in async path.
+                job_id = generate_nanoid()
+                background_tasks.add_task(
+                    run_plugin_async_task, plugin_class=plugin_class, song=song, params=params, job_id=job_id,
+                    store_uploader=async_config["store"]["uploader"])
+                return Response(packb({
+                    "status": "ACCEPTED",
+                    "jobId": job_id,
+                    "resultUrl": async_config["store"]["resultUrlResolver"](job_id)
+                }), headers={"Content-Type": "application/octet-stream"})
+            else:
+                result = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
+                return Response(packb(result), headers={"Content-Type": "application/octet-stream"})
 
         return app
