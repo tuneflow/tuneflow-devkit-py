@@ -35,7 +35,7 @@ classifiers = [
 dependencies = [
     'python-socketio >= 5.7.2',
     'uvicorn[standard] >= 0.20.0',
-    'tuneflow-py >= 0.3.11',
+    'tuneflow-py >= 0.4.0',
     'msgpack == 1.0.4',
     'fastapi == 0.92.0',
     'msgpack-asgi == 1.1.0'
