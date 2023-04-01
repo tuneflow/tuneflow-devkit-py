@@ -54,9 +54,11 @@ class Runner:
         '''
 
         app = FastAPI()
+        print(f'Using config: {config}')
 
         cors_allowed_origins = config["corsConfig"]["allowedOrigins"] if config is not None and "corsConfig" in config and "allowedOrigins" in config["corsConfig"] else [
             "*"]
+        print(f'Using cors allowed origins: {cors_allowed_origins}')
         app.add_middleware(
             CORSMiddleware,
             allow_origins=cors_allowed_origins,
