@@ -22,7 +22,7 @@ class Debugger:
             raise Exception("plugin_class and bundle_file must be provided")
         validate_plugin(plugin_class=plugin_class)
         self._plugin_class = plugin_class
-        with open(bundle_file_path, 'r') as bundle_file:
+        with open(bundle_file_path, 'rb') as bundle_file:
             bundle_info = json.load(bundle_file)
             # Validate plugin and bundle.
             plugin_info = find_match_plugin_info(
