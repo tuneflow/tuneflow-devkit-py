@@ -6,7 +6,7 @@ from msgpack import unpackb, packb
 from tuneflow_devkit.validation_utils import validate_plugin, find_match_plugin_info
 from collections import defaultdict
 from fastapi import FastAPI, Request, Response, Depends, BackgroundTasks
-from pathlib import PosixPath
+from pathlib import Path
 import asyncio
 import functools
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,7 +46,7 @@ class Runner:
                         plugin_class.provider_id() == plugin_info["providerId"] and plugin_class.plugin_id() ==
                         plugin_info["pluginId"] for plugin_class in plugin_class_list):
                     raise Exception(
-                        f'Plugin {plugin_info["providerId"]} {plugin_info["pluginInfo"]} has no corresponding source code in the plugin list')
+                        f'Plugin {plugin_info["providerId"]} {plugin_info["pluginId"]} has no corresponding source code in the plugin list')
 
     def start(self, path_prefix='/', config=None):
         '''
@@ -75,9 +75,9 @@ class Runner:
             response.headers["Vary"] = 'Origin'
             return response
 
-        get_info_path = str(PosixPath(path_prefix).joinpath('plugin-bundle-info'))
-        init_plugin_path = str(PosixPath(path_prefix).joinpath('init-plugin-params'))
-        run_plugin_path = str(PosixPath(path_prefix).joinpath('jobs'))
+        get_info_path = str(Path(path_prefix).joinpath('plugin-bundle-info'))
+        init_plugin_path = str(Path(path_prefix).joinpath('init-plugin-params'))
+        run_plugin_path = str(Path(path_prefix).joinpath('jobs'))
 
         def init_plugin_task(plugin_class: Type[TuneflowPlugin], song: Song):
             try:
