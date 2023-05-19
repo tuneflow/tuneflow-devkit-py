@@ -98,10 +98,9 @@ class Runner:
                 plugin_class.run(song, params)
             except Exception as e:
                 print(traceback.format_exc())
-                if exception_handler:
-                    exception_handler(e)
                 return {
-                    "status": "ERROR"
+                    "status": "ERROR",
+                    "error": e
                 }
             return {
                 "status": "OK",
@@ -111,8 +110,13 @@ class Runner:
         async def run_plugin_async_task(plugin_class: Type[TuneflowPlugin], song, params, job_id: str, store_uploader):
             # TODO: Revisit to see if we can call run_plugin_task directly.
             response = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
+            error = response["error"] if "error" in response else None
+            if "error" in response:
+                del response["error"]
             response["jobId"] = job_id
             store_uploader(job_id, packb(response))
+            if response["status"] == "ERROR" and error is not None and exception_handler is not None:
+                exception_handler(error)
 
         def find_plugin_by_id(plugin_class_list: List[Type[TuneflowPlugin]], provider_id, plugin_id):
             for plugin_class in plugin_class_list:
@@ -161,6 +165,11 @@ class Runner:
                 }), headers={"Content-Type": "application/octet-stream"})
             else:
                 result = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
+                if result["status"] == "ERROR" and "error" in result:
+                    if exception_handler:
+                        exception_handler(result["error"])
+                if "error" in result:
+                    del result["error"]
                 return Response(packb(result), headers={"Content-Type": "application/octet-stream"})
 
         return app
