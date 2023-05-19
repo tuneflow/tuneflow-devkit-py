@@ -68,6 +68,7 @@ class Runner:
         )
 
         async_config = config["async"] if config and "async" in config else None
+        exception_handler = config["exception"]["handler"] if config and "exception" in config and "handler" in config["exception"] else None
 
         @app.middleware("http")
         async def add_vary_origin_header(request: Request, call_next):
@@ -97,6 +98,8 @@ class Runner:
                 plugin_class.run(song, params)
             except Exception as e:
                 print(traceback.format_exc())
+                if exception_handler:
+                    exception_handler(e)
                 return {
                     "status": "ERROR"
                 }
