@@ -109,7 +109,7 @@ class Runner:
 
         async def run_plugin_async_task(plugin_class: Type[TuneflowPlugin], song, params, job_id: str, store_uploader):
             # TODO: Revisit to see if we can call run_plugin_task directly.
-            response = await asyncio.get_event_loop().run_in_executor(None,  functools.partial(run_plugin_task, plugin_class=plugin_class, song=song, params=params))
+            response = run_plugin_task(plugin_class=plugin_class, song=song, params=params)
             error = response["error"] if "error" in response else None
             if "error" in response:
                 del response["error"]
