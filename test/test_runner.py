@@ -23,6 +23,18 @@ class TestPluginCases(unittest.TestCase):
         with open(bundle_file_path, 'r') as bundle_file:
             bundle_info = json.load(bundle_file)
             assert response.json() == bundle_info
+    
+    def test_runner_path_prefix(self):
+        bundle_file_path = str(pathlib.PurePath(
+            __file__).parent.joinpath('hello_world_plugin.bundle.json'))
+        app = Runner(plugin_class_list=[HelloWorldPlugin], bundle_file_path=bundle_file_path).start(path_prefix='/plugins/test')
+
+        client = TestClient(app)
+        response = client.get("/plugins/test/plugin-bundle-info")
+        assert response.status_code == 200
+        with open(bundle_file_path, 'r') as bundle_file:
+            bundle_info = json.load(bundle_file)
+            assert response.json() == bundle_info
 
     def test_auth_enabled_runner(self):
         bundle_file_path = str(pathlib.PurePath(

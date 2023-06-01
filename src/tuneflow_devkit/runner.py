@@ -6,12 +6,12 @@ from msgpack import unpackb, packb
 from tuneflow_devkit.validation_utils import validate_plugin, find_match_plugin_info
 from collections import defaultdict
 from fastapi import FastAPI, Request, Response, Depends, BackgroundTasks
-from pathlib import Path
 import asyncio
 import functools
 from fastapi.middleware.cors import CORSMiddleware
 import traceback
 from nanoid import generate as generate_nanoid
+from urllib.parse import urljoin
 
 
 class Runner:
@@ -76,9 +76,14 @@ class Runner:
             response.headers["Vary"] = 'Origin'
             return response
 
-        get_info_path = str(Path(path_prefix).joinpath('plugin-bundle-info'))
-        init_plugin_path = str(Path(path_prefix).joinpath('init-plugin-params'))
-        run_plugin_path = str(Path(path_prefix).joinpath('jobs'))
+        if not path_prefix.endswith('/'):
+            path_prefix += '/'
+
+        get_info_path = urljoin(path_prefix, 'plugin-bundle-info')
+        init_plugin_path = urljoin(path_prefix, 'init-plugin-params')
+        run_plugin_path = urljoin(path_prefix, 'jobs')
+
+        print(f'Serving bundle info at: {get_info_path}')
 
         def init_plugin_task(plugin_class: Type[TuneflowPlugin], song: Song):
             try:
