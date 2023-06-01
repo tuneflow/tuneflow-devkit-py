@@ -26,7 +26,7 @@ class Runner:
         self._plugin_class_list = plugin_class_list
         self._plugin_info_map = defaultdict(dict)
         self._bundle_info: dict | None = None
-        with open(bundle_file_path, 'r') as bundle_file:
+        with open(bundle_file_path, 'r', encoding='utf-8') as bundle_file:
             bundle_info = json.load(bundle_file)
             self._bundle_info = bundle_info
             # Validate plugin and bundle.
